@@ -1,12 +1,12 @@
-﻿public class Rest : GAction {
-    public override bool PrePerform() {
-
+﻿public class Rest : GAction 
+{
+    public override bool PrePerform() 
+    {
         return true;
     }
 
-    public override bool PostPerform() {
-
-        //the agent will no longer believe they need a rest
+    public override bool PostPerform() 
+    {
         beliefs.RemoveState("exhausted");
         return true;
     }

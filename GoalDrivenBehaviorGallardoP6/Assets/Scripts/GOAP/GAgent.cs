@@ -1,77 +1,66 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
-public class SubGoal {
-
-    // Dictionary to store our goals
+public class SubGoal 
+{
     public Dictionary<string, int> sGoals;
-    // Bool to store if goal should be removed after it has been achieved
     public bool remove;
 
-    // Constructor
-    public SubGoal(string s, int i, bool r) {
-
+    public SubGoal(string s, int i, bool r) 
+    {
         sGoals = new Dictionary<string, int>();
         sGoals.Add(s, i);
         remove = r;
     }
 }
 
-public class GAgent : MonoBehaviour {
-
-    // Store our list of actions
+public class GAgent : MonoBehaviour 
+{
     public List<GAction> actions = new List<GAction>();
-    // Dictionary of subgoals
     public Dictionary<SubGoal, int> goals = new Dictionary<SubGoal, int>();
-    // Our inventory
+
     public GInventory inventory = new GInventory();
-    // Our beliefs
     public WorldStates beliefs = new WorldStates();
 
-    // Access the planner
+
     GPlanner planner;
-    // Action Queue
     Queue<GAction> actionQueue;
-    // Our current action
     public GAction currentAction;
-    // Our subgoal
     SubGoal currentGoal;
 
-    // Start is called before the first frame update
-    public void Start() {
-
+    public void Start() 
+    {
         GAction[] acts = this.GetComponents<GAction>();
-        foreach (GAction a in acts) {
-
+        foreach (GAction a in acts) 
+        {
             actions.Add(a);
         }
     }
 
     bool invoked = false;
-    //an invoked method to allow an agent to be performing a task
-    //for a set location
-    public void CompleteAction() {
 
+    public void CompleteAction() 
+    {
         currentAction.running = false;
         currentAction.PostPerform();
         invoked = false;
     }
 
-    void LateUpdate() {
+    void LateUpdate() 
+    {
 
-        //if there's a current action and it is still running
-        if (currentAction != null && currentAction.running) {
+        if (currentAction != null && currentAction.running) 
+        {
 
-            // Find the distance to the target
-            float distanceToTarget = Vector3.Distance(currentAction.target.transform.position, this.transform.position);
-            // Check the agent has a goal and has reached that goal
-            if (currentAction.agent.hasPath && distanceToTarget < 2.0f) { // currentAction.agent.remainingDistance < 1.0f) 
+            float distanceToTarget = Vector3.Distance(currentAction.target.transform.position, 
+                                                        this.transform.position);
 
-                if (!invoked) {
-
-                    //if the action movement is complete wait
-                    //a certain duration for it to be completed
+            if (currentAction.agent.hasPath && distanceToTarget < 2.0f) 
+            { 
+                if (!invoked) 
+                {
                     Invoke("CompleteAction", currentAction.duration);
                     invoked = true;
                 }
@@ -79,66 +68,53 @@ public class GAgent : MonoBehaviour {
             return;
         }
 
-        // Check we have a planner and an actionQueue
-        if (planner == null || actionQueue == null) {
-
-            // If planner is null then create a new one
+        if (planner == null || actionQueue == null) 
+        {
             planner = new GPlanner();
 
-            // Sort the goals in descending order and store them in sortedGoals
             var sortedGoals = from entry in goals orderby entry.Value descending select entry;
 
-            //look through each goal to find one that has an achievable plan
-            foreach (KeyValuePair<SubGoal, int> sg in sortedGoals) {
-
+            foreach (KeyValuePair<SubGoal, int> sg in sortedGoals) 
+            {
                 actionQueue = planner.plan(actions, sg.Key.sGoals, beliefs);
-                // If actionQueue is not = null then we must have a plan
-                if (actionQueue != null) {
 
-                    // Set the current goal
+                if (actionQueue != null) 
+                {
                     currentGoal = sg.Key;
                     break;
                 }
             }
         }
 
-        // Have we an actionQueue
-        if (actionQueue != null && actionQueue.Count == 0) {
-
-            // Check if currentGoal is removable
-            if (currentGoal.remove) {
-
-                // Remove it
+        if (actionQueue != null && actionQueue.Count == 0) 
+        {
+            if (currentGoal.remove) 
+            {
                 goals.Remove(currentGoal);
             }
-            // Set planner = null so it will trigger a new one
+
             planner = null;
         }
 
-        // Do we still have actions
-        if (actionQueue != null && actionQueue.Count > 0) {
-
-            // Remove the top action of the queue and put it in currentAction
+        if (actionQueue != null && actionQueue.Count > 0) 
+        {
             currentAction = actionQueue.Dequeue();
 
-            if (currentAction.PrePerform()) {
-
-                // Get our current object
-                if (currentAction.target == null && currentAction.targetTag != "") {
-
+            if (currentAction.PrePerform())
+            {
+                if (currentAction.target == null && currentAction.targetTag != "")
+                {
                     currentAction.target = GameObject.FindWithTag(currentAction.targetTag);
                 }
 
-                if (currentAction.target != null) {
-
-                    // Activate the current action
+                if (currentAction.target != null)
+                {
                     currentAction.running = true;
-                    // Pass Unities AI the destination for the agent
                     currentAction.agent.SetDestination(currentAction.target.transform.position);
                 }
-            } else {
-
-                // Force a new plan
+            }
+            else
+            {
                 actionQueue = null;
             }
         }
