@@ -56,7 +56,7 @@ public class GPlanner
 
         if (!success) 
         {
-            Debug.Log("NO PLAN");
+            Debug.Log("Idle");
             return null;
         }
 
